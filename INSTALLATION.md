@@ -7,6 +7,8 @@ pip install unicorn
 pip install pymysql
 pip install sqlalchemy
 pip install alembic
+pip install bcrypt
+pip install jwt
 ```
 
 ### mysql install

@@ -20,7 +20,6 @@ class SQLAlchemy:
         :return:
         """
         database_url = kwargs.get("DB_URL")
-        print(database_url)
         pool_recycle = kwargs.setdefault("DB_POOL_RECYCLE", 900)
         echo = kwargs.setdefault("DB_ECHO", True)
 
@@ -67,4 +66,4 @@ class SQLAlchemy:
 
 
 db = SQLAlchemy()
-Base = declarative_base()
+Base = declarative_base() # 상속클래스들을 자동으로 인지하고 알아서 매핑해줌.
