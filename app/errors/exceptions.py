@@ -12,6 +12,7 @@ class APIException(Exception):
     code: str # custom error code
     msg: str # user에게 보여주는 message
     detail: str # 에러 정보
+    ex: Exception
 
     def __init__(
         self,
@@ -26,6 +27,7 @@ class APIException(Exception):
         self.code = code
         self.msg = msg
         self.detail = detail
+        self.ex = ex
         super().__init__(ex)
 
 class NotFoundUserEx(APIException):

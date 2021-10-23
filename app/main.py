@@ -10,7 +10,7 @@ from starlette.middleware.cors import CORSMiddleware
 from app.common.consts import EXCEPT_PATH_LIST, EXCEPT_PATH_REGEX
 from app.database.conn import db
 from app.common.config import conf
-from app.middlewares.token_validator import AccessControl
+from app.middlewares.token_validator import access_control # AccessControl 에서 따로 만든 access_control로 변경
 from app.middlewares.trusted_hosts import TrustedHostMiddleware
 from app.routes import index, auth
 from app.routes import index, auth, users
@@ -33,7 +33,7 @@ def create_app():
 
     # 미들웨어 정의
     # 맨 아래의 middle ware 부터 실행
-    app.add_middleware(AccessControl, except_path_list=EXCEPT_PATH_LIST, except_path_regex=EXCEPT_PATH_REGEX)
+    app.add_middleware(middleware_class=BaseHTTPMiddleware, dispatch=access_control)
     
     # back end 주소와 front end 주소가 달라도 통신 허용하게 하는 middle ware
     app.add_middleware(
