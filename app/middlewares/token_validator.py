@@ -4,19 +4,14 @@ import re
 
 import jwt
 
-from fastapi.params import Header
 from jwt.exceptions import ExpiredSignatureError, DecodeError
-from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.datastructures import URL, Headers
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse
 
 from app.common.consts import EXCEPT_PATH_LIST, EXCEPT_PATH_REGEX
 from app.errors import exceptions as ex
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.common import config, consts
-from app.common.config import conf
 from app.errors.exceptions import APIException
 from app.models import UserToken
 
@@ -35,7 +30,7 @@ async def access_control(request: Request, call_next):
     cookies = request.cookies
     url = request.url.path
     if await url_pattern_check(url, EXCEPT_PATH_REGEX) or url in EXCEPT_PATH_LIST:
-        response = await call_next(request)
+        response = await call_next(request) # if 문에 걸리면 다음 미들웨어 호출
         if url != "/":
             await api_logger(request=request, response=response)
         return response
@@ -94,6 +89,6 @@ async def token_decode(access_token):
 
 
 async def exception_handler(error: Exception):
-    if not isinstance(error, APIException):
+    if not isinstance(error, APIException): # exception을 APIException으로 변경하여 표출하게함
         error = APIException(ex=error, detail=str(error))
     return error
