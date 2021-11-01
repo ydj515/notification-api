@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -9,10 +7,8 @@ from sqlalchemy import (
     Enum,
     Boolean,
     ForeignKey,
-    JSON,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, relationship
 
 from app.database.conn import Base, db
 
@@ -27,6 +23,7 @@ class BaseMixin:
     def __init__(self):
         self._q = None # 실제 쿼리가 담김
         self._session = None
+        self.served = None
 
     def all_columns(self):
         return [c for c in self.__table__.columns if c.primary_key is False and c.name != "created_at"]
@@ -55,7 +52,7 @@ class BaseMixin:
         return obj
 
     @classmethod
-    def get(cls, **kwargs):
+    def get(cls, **kwargs) -> object:
         """
         Simply get a Row
         :param kwargs:
@@ -98,10 +95,10 @@ class BaseMixin:
         obj = cls()
         if session: 
             obj._session = session
-            obj._sess_served = True
+            obj.served = True
         else:
             obj._session = next(db.session())
-            obj._sess_served = False
+            obj.served = False
         query = obj._session.query(cls)
         query = query.filter(*cond)
         obj._q = query
@@ -128,29 +125,30 @@ class BaseMixin:
             self._q = self._q.order_by(col.asc()) if is_asc else self._q.order_by(col.desc())
         return self
 
+    def update(self, auto_commit: bool = False, **kwargs):
+            qs = self._q.update(kwargs)
+            get_id = self.id
+            ret = None
 
-    def update(self, sess: Session = None, auto_commit: bool = False, **kwargs):
-        cls = self.cls_attr()
-        if sess:
-            query = sess.query(cls)
-        else:
-            sess = next(db.session())
-            query = sess.query(cls)
-        self.close()
-        return query.update(**kwargs)
+            self._session.flush()
+            if qs > 0 :
+                ret = self._q.first()
+            if auto_commit:
+                self._session.commit()
+            return ret
 
     def first(self):
         result = self._q.first()
         self.close()
         return result
 
-    def delete(self, auto_commit: bool = False, **kwargs):
+    def delete(self, auto_commit: bool = False):
         self._q.delete()
         if auto_commit:
             self._session.commit()
-        self.close()
 
     def all(self):
+        print(self.served)
         result = self._q.all()
         self.close()
         return result
@@ -160,17 +158,8 @@ class BaseMixin:
         self.close()
         return result
 
-    def dict(self, *args: str):
-        q_dict = {}
-        for c in self.__table__.columns:
-            if c.name in args:
-                q_dict[c.name] = getattr(self, c.name)
-
-        return q_dict
-
     def close(self):
-        if self._sess_served:
-            self._session.commit()
+        if not self.served:
             self._session.close()
         else:
             self._session.flush()
@@ -196,3 +185,10 @@ class ApiKeys(Base, BaseMixin):
     status = Column(Enum("active", "stopped", "deleted"), default="active")
     is_whitelisted = Column(Boolean, default=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    whitelist = relationship("ApiWhiteLists", backref="api_keys")
+
+
+class ApiWhiteLists(Base, BaseMixin):
+    __tablename__ = "api_whitelists"
+    ip_addr = Column(String(length=64), nullable=False)
+    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False)

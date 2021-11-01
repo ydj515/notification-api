@@ -42,3 +42,37 @@ create table users
     created_at      datetime                              default CURRENT_TIMESTAMP not null
 );
 ```
+
+```sql
+create table api_keys
+(
+    id             int auto_increment
+        primary key,
+    access_key     varchar(64)                                                     not null,
+    secret_key     varchar(64)                                                     not null,
+    user_memo      varchar(50)                                                     null,
+    status         enum ('active', 'stopped', 'deleted') default 'active'          not null,
+    is_whitelisted tinyint(1)                            default 0                 null,
+    user_id        int                                                             not null,
+    updated_at     datetime                              default CURRENT_TIMESTAMP null,
+    created_at     datetime                              default CURRENT_TIMESTAMP null
+);
+
+create index api_keys_access_key_index
+    on api_keys (access_key);
+```
+
+```sql
+create table api_whitelists
+(
+    id         int auto_increment
+        primary key,
+    ip_addr    varchar(64)                        not null,
+    api_key_id int                                not null,
+    updated_at datetime default CURRENT_TIMESTAMP not null,
+    created_at datetime default CURRENT_TIMESTAMP not null,
+    constraint api_whitelists_api_keys_id_fk
+        foreign key (api_key_id) references api_keys (id)
+            on delete cascade
+);
+```
