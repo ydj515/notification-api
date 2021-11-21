@@ -12,8 +12,7 @@ from app.database.conn import db
 from app.common.config import conf
 from app.middlewares.token_validator import access_control # AccessControl 에서 따로 만든 access_control로 변경
 from app.middlewares.trusted_hosts import TrustedHostMiddleware
-from app.routes import index, auth
-from app.routes import index, auth, users
+from app.routes import index, auth, users, services
 
 
 API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=False)

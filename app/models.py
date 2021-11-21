@@ -1,11 +1,11 @@
 from datetime import datetime
 from enum import Enum
+from typing import List
 
 from pydantic import Field
 from pydantic.main import BaseModel
 from pydantic.networks import EmailStr, IPvAnyAddress
 
-# BaseModel 상속 없이는 post 메소드를 작성할 수 없음.
 
 class UserRegister(BaseModel):
     # pip install 'pydantic[email]'
@@ -24,6 +24,15 @@ class Token(BaseModel):
     Authorization: str = None
 
 
+class EmailRecipients(BaseModel):
+    name: str
+    email: str
+
+
+class SendEmail(BaseModel):
+    email_to: List[EmailRecipients] = None
+
+
 class KakaoMsgBody(BaseModel):
     msg: str = None
 
@@ -34,7 +43,6 @@ class MessageOk(BaseModel):
 
 class UserToken(BaseModel):
     id: int
-    pw: str = None
     email: str = None
     name: str = None
     phone_number: str = None

@@ -1,3 +1,4 @@
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -17,7 +18,6 @@ class BaseMixin:
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, nullable=False, default=func.utc_timestamp())
     updated_at = Column(DateTime, nullable=False, default=func.utc_timestamp(), onupdate=func.utc_timestamp())
-
     # 명시적으로 init을 표현함.
     # sqlalchemy에서는 실제로 동작하진 않음.
     def __init__(self):
@@ -68,9 +68,9 @@ class BaseMixin:
         if query.count() > 1:
             raise Exception("Only one row is supposed to be returned, but got more than one.")
         result = query.first()
-        session.close()
+        if not session:
+            sess.close()
         return result
-
 
     @classmethod
     def filter(cls, session: Session = None, **kwargs):
@@ -92,9 +92,8 @@ class BaseMixin:
             elif len(key) == 2 and key[1] == 'lt': cond.append((col < val))
             elif len(key) == 2 and key[1] == 'lte': cond.append((col <= val))
             elif len(key) == 2 and key[1] == 'in': cond.append((col.in_(val)))
-
         obj = cls()
-        if session: 
+        if session:
             obj._session = session
             obj.served = True
         else:
@@ -104,7 +103,6 @@ class BaseMixin:
         query = query.filter(*cond)
         obj._q = query
         return obj
-
 
     @classmethod
     def cls_attr(cls, col_name=None):
@@ -127,16 +125,16 @@ class BaseMixin:
         return self
 
     def update(self, auto_commit: bool = False, **kwargs):
-            qs = self._q.update(kwargs)
-            get_id = self.id
-            ret = None
+        qs = self._q.update(kwargs)
+        get_id = self.id
+        ret = None
 
-            self._session.flush()
-            if qs > 0 :
-                ret = self._q.first()
-            if auto_commit:
-                self._session.commit()
-            return ret
+        self._session.flush()
+        if qs > 0 :
+            ret = self._q.first()
+        if auto_commit:
+            self._session.commit()
+        return ret
 
     def first(self):
         result = self._q.first()
@@ -176,6 +174,7 @@ class Users(Base, BaseMixin):
     profile_img = Column(String(length=1000), nullable=True)
     sns_type = Column(Enum("FB", "G", "K"), nullable=True)
     marketing_agree = Column(Boolean, nullable=True, default=True)
+    keys = relationship("ApiKeys", back_populates="users")
 
 
 class ApiKeys(Base, BaseMixin):
@@ -187,6 +186,7 @@ class ApiKeys(Base, BaseMixin):
     is_whitelisted = Column(Boolean, default=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     whitelist = relationship("ApiWhiteLists", backref="api_keys")
+    users = relationship("Users", back_populates="keys")
 
 
 class ApiWhiteLists(Base, BaseMixin):
